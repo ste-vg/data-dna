@@ -1,2 +1,1 @@
-# data-dna
-dna data layout
+# Data DNA
