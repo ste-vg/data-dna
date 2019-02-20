@@ -19,11 +19,31 @@ app
     {
         width: 100%;
         height: 100%;
-        background-color: red;
+        //background-color: red;
     }
 
     svg
     {       
         background-color: black;
+    }
+
+    .line
+    {
+        fill: none;
+        stroke-width: 10px;
+        stroke-linecap: round;
+    }
+
+    .base
+    {
+        fill: none;
+        stroke-width: 6px;
+        stroke-linecap: round;
+        stroke: white;
+
+        &.blank
+        {
+            stroke: transparent;
+        }
     }
 }

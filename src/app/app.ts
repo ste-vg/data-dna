@@ -7,23 +7,50 @@ export class App extends Component
 {
     private _container:HTMLElement | null = null;
     private svg:SVGElement;
-    private width:number = 0;
-    private height:number = 0;
+    private baseGroup:SVGElement;
+    private _width:number = 0;
+    private _height:number = 0;
     private lineTop:SVGPathElement;
     private lineBottomOver:SVGPathElement;
     private lineBottomUnder:SVGPathElement;
 
-    private amplitude = 10; // wave amplitude
-    private rarity = 1; // point spacing
-    private freq = 0.1; // angular frequency
+    private amplitude = 30; // wave amplitude
+    private rarity = 3; // point spacing
+    private freq = 0.3; // angular frequency
     private phase = 0; 
+    private minBaseGap = 0;
+    private padding = 10;
+    private rotationSpeed = 0.075;
 
     private data = [
+        'blank',
         'panasky',
         'panasky',
         'panasky',
-        'panasky'
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'blank'
     ]
+
+    private bases:SVGLineElement[] = [];
 
     constructor(container:Element)
     {
@@ -36,6 +63,16 @@ export class App extends Component
 
         // 
 
+        this.baseGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        this.svg.appendChild(this.baseGroup);
+
+        // 
+        
+        this.lineBottomUnder = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+        this.lineBottomUnder.setAttribute("class", "line");
+        this.lineBottomUnder.style.stroke = 'steelblue';
+        this.svg.appendChild(this.lineBottomUnder);
+
         this.lineTop = document.createElementNS("http://www.w3.org/2000/svg", 'path');
         this.lineTop.setAttribute("class", "line");
         this.lineTop.style.stroke = 'red';
@@ -43,13 +80,9 @@ export class App extends Component
 
         this.lineBottomOver = document.createElementNS("http://www.w3.org/2000/svg", 'path');
         this.lineBottomOver.setAttribute("class", "line");
-        this.lineBottomOver.style.stroke = 'blue';
+        this.lineBottomOver.style.stroke = 'steelblue';
+        
         this.svg.appendChild(this.lineBottomOver);
-
-        this.lineBottomUnder = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-        this.lineBottomUnder.setAttribute("class", "line");
-        this.lineBottomUnder.style.stroke = 'green';
-        this.svg.appendChild(this.lineBottomUnder);
 
         
     }
@@ -64,27 +97,88 @@ export class App extends Component
             window.addEventListener('resize', () => this.onResize())
             this.onResize();
 
-            // TODO:
-            // USE DASHED LINE TO HAVE LINES GO OVER AND UNDER
-
-
+            for (let i = 0; i < this.data.length; i++) 
+            {
+                let base = document.createElementNS("http://www.w3.org/2000/svg", 'line');
+                base.setAttribute('class', `base ${this.data[i]}`);
+                this.baseGroup.appendChild(base);
+                this.bases.push(base);
+            }  
+            
+            requestAnimationFrame(() => this.tick());
         }
     }
 
     private draw()
     {
+        let topPath = [];
+        let bottomPath = [];
 
+        for (let i = 0; i < this.data.length; i++) 
+        {
+            let x = String((i + 1) * this.rarity);
+            let y1 = String(Math.sin(this.freq * (i + this.phase)) * this.amplitude + (this._height/2));
+            let y2 = String(Math.sin(this.freq * (i + this.phase)) * -this.amplitude + (this._height/2));
+
+            let base = this.bases[i];
+            base.setAttribute('x1', x);
+            base.setAttribute('x2', x);
+            base.setAttribute('y1', y1);
+            base.setAttribute('y2', y2);
+
+            topPath.push([x, y1]);
+            bottomPath.push([x, y2]);
+        }   
+
+        let topPathString = '';
+        let bottomPathString = '';
+
+        for (let i = 0; i < topPath.length; i++) 
+        {
+            topPathString += (i == 0 ? 'M' : 'L');
+            topPathString += topPath[i].join(' ');
+
+            bottomPathString += (i == 0 ? 'M' : 'L');
+            bottomPathString += bottomPath[i].join(' ');
+        }
+        this.lineTop.setAttribute("d", topPathString);
+        this.lineBottomOver.setAttribute("d", bottomPathString);
+        this.lineBottomUnder.setAttribute("d", bottomPathString);
+
+        let lineSize = this.lineBottomOver.getTotalLength()
+        let curveSize = (lineSize - (lineSize * this.freq)) / 1.5;
+        this.lineBottomOver.style.strokeDasharray = `${curveSize} ${curveSize}`;
+        this.lineBottomOver.style.strokeDashoffset = `${(curveSize / 2) + this.rarity * this.phase}`;
+        
+    }
+
+    tick()
+    {
+        this.phase += this.rotationSpeed;
+        this.draw();
+        requestAnimationFrame(() => this.tick());
     }
 
     onResize()
 	{
+        
         if(this._container)
         {
-            this.width = this._container.offsetWidth;
-            this.height = this._container.offsetHeight;
+            this._width = this._container.offsetWidth;
+            this._height = this._container.offsetHeight;
 
-            this.svg.setAttribute('width', String(this.width));
-            this.svg.setAttribute('height', String(this.height));
+            this.svg.setAttribute('width', String(this._width));
+            this.svg.setAttribute('height', String(this._height));
+
+            
+            
+            this.amplitude = (this.height - (this.padding * 2)) / 2;
+            this.rarity = this.width / (this.data.length);
+            if(this.rarity < this.minBaseGap) this.rarity = this.minBaseGap;
         }
-	}
+    }
+    
+    private get width() { return this._width - (this.padding * 2) };
+    private get height() { return this._height - (this.padding * 2) };
+
 }
