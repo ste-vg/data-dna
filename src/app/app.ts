@@ -13,16 +13,19 @@ export class App extends Component
     private lineBottomOver:SVGPathElement;
     private lineBottomUnder:SVGPathElement;
 
-    private amplitude = 30; // wave amplitude
-    private rarity = 3; // point spacing
-    private freq = 0.3; // angular frequency
+    private amplitude = 0; // wave amplitude
+    private rarity = 0; // point spacing
+    private freq = 0.15; // angular frequency
     private phase = 0; 
     private minBaseGap = 0;
     private padding = 10;
     private rotationSpeed = 0.075;
+    private curveResolution = 10;
+    private points = 0;
+
+    private addBlanks:boolean = true;
 
     private data = [
-        'blank',
         'panasky',
         'panasky',
         'panasky',
@@ -34,19 +37,7 @@ export class App extends Component
         'panasky',
         'panasky',
         'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'blank'
+        'panasky'
     ]
 
     private bases:SVGLineElement[] = [];
@@ -89,6 +80,12 @@ export class App extends Component
     private onInit()
     {
         this._container = document.getElementById('root');
+
+        if(this.addBlanks)
+        {
+            this.data.push('blank');
+            this.data.unshift('blank');
+        }
         if(this._container)
         {
             this._container.appendChild(this.svg);
@@ -112,22 +109,33 @@ export class App extends Component
     {
         let topPath = [];
         let bottomPath = [];
+        
 
-        for (let i = 0; i < this.data.length; i++) 
+        for (let i = 0; i < this.points; i++) 
         {
             let x = String((i + 1) * this.rarity);
             let y1 = String(Math.sin(this.freq * (i + this.phase)) * this.amplitude + (this._height/2));
             let y2 = String(Math.sin(this.freq * (i + this.phase)) * -this.amplitude + (this._height/2));
+
+            topPath.push([x, y1]);
+            bottomPath.push([x, y2]);
+        }   
+
+        let gaps = Math.round(this.points / (this.data.length - 1));
+        console.log(gaps)
+        for (let i = 0; i < this.data.length; i++) 
+        {
+            let j = i * gaps;
+            let x = String((j + 1) * this.rarity);
+            let y1 = String(Math.sin(this.freq * (j + this.phase)) * this.amplitude + (this._height/2));
+            let y2 = String(Math.sin(this.freq * (j + this.phase)) * -this.amplitude + (this._height/2));
 
             let base = this.bases[i];
             base.setAttribute('x1', x);
             base.setAttribute('x2', x);
             base.setAttribute('y1', y1);
             base.setAttribute('y2', y2);
-
-            topPath.push([x, y1]);
-            bottomPath.push([x, y2]);
-        }   
+        }
 
         let topPathString = '';
         let bottomPathString = '';
@@ -161,6 +169,8 @@ export class App extends Component
     onResize()
 	{
         
+        
+
         if(this._container)
         {
             this._width = this._container.offsetWidth;
@@ -170,9 +180,9 @@ export class App extends Component
             this.svg.setAttribute('height', String(this._height));
 
             
-            
+            this.points = Math.round(this.width / this.curveResolution)
             this.amplitude = (this.height - (this.padding * 2)) / 2;
-            this.rarity = this.width / (this.data.length);
+            this.rarity = this.width / this.points;
             if(this.rarity < this.minBaseGap) this.rarity = this.minBaseGap;
         }
     }
