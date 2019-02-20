@@ -1,6 +1,7 @@
 import './app.scss';
 import HTML from './app.html';
 import { Component } from '../common/component';
+import { TweenMax, Power4 } from "gsap";
 
 export class App extends Component
 {
@@ -15,17 +16,30 @@ export class App extends Component
 
     private amplitude = 0; // wave amplitude
     private rarity = 0; // point spacing
-    private freq = 0.15; // angular frequency
+    private targetFreq = 0.15; // angular frequency
+    private freq = 0;
     private phase = 0; 
     private minBaseGap = 0;
     private padding = 10;
     private rotationSpeed = 0.075;
     private curveResolution = 10;
     private points = 0;
+    private maxAmplitude = 40;
+    private targetMinY = 10;
+    private minY = 10;
 
+    private backBoneWidth = 0;
+    private targetBackBoneWidth = 8;
+
+    private showDetails:boolean = true;
     private addBlanks:boolean = true;
 
     private data = [
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
+        'panasky',
         'panasky',
         'panasky',
         'panasky',
@@ -72,9 +86,7 @@ export class App extends Component
         this.lineBottomOver.setAttribute("class", "line");
         this.lineBottomOver.style.stroke = 'steelblue';
         
-        this.svg.appendChild(this.lineBottomOver);
-
-        
+        this.svg.appendChild(this.lineBottomOver);        
     }
 
     private onInit()
@@ -101,34 +113,59 @@ export class App extends Component
                 this.bases.push(base);
             }  
             
+            this._container.addEventListener('click', () => this.toggleState())
+
+            this.onStateChange();
             requestAnimationFrame(() => this.tick());
         }
+    }
+
+    private toggleState()
+    {
+        this.showDetails = !this.showDetails;
+        this.onStateChange();
+    }
+
+    private onStateChange()
+    {
+        TweenMax.to(this, 3, {
+            backBoneWidth: this.showDetails ? this.targetBackBoneWidth : 0,
+            freq: this.showDetails ? this.targetFreq : 0, 
+            minY: this.showDetails ? 0 : this.targetMinY, 
+            ease: Power4.easeInOut
+        })
+    }
+
+    private getY(i:number, direction:number)
+    {
+        let amp = direction * this.amplitude;
+        let minY = direction * this.minY;
+        return minY + (Math.sin(this.freq * (i + this.phase)) * amp + (this._height/2));
     }
 
     private draw()
     {
         let topPath = [];
         let bottomPath = [];
-        
 
         for (let i = 0; i < this.points; i++) 
         {
             let x = String((i + 1) * this.rarity);
-            let y1 = String(Math.sin(this.freq * (i + this.phase)) * this.amplitude + (this._height/2));
-            let y2 = String(Math.sin(this.freq * (i + this.phase)) * -this.amplitude + (this._height/2));
+            let y1 = String(this.getY(i, 1));
+            let y2 = String(this.getY(i, -1));
 
             topPath.push([x, y1]);
             bottomPath.push([x, y2]);
         }   
 
-        let gaps = Math.round(this.points / (this.data.length - 1));
-        console.log(gaps)
+        let gaps = this.points / (this.data.length - 1); 
+
         for (let i = 0; i < this.data.length; i++) 
         {
             let j = i * gaps;
             let x = String((j + 1) * this.rarity);
-            let y1 = String(Math.sin(this.freq * (j + this.phase)) * this.amplitude + (this._height/2));
-            let y2 = String(Math.sin(this.freq * (j + this.phase)) * -this.amplitude + (this._height/2));
+            let y1 = String(this.getY(j, 1));
+            let y2 = String(this.getY(j, -1));
 
             let base = this.bases[i];
             base.setAttribute('x1', x);
@@ -148,15 +185,19 @@ export class App extends Component
             bottomPathString += (i == 0 ? 'M' : 'L');
             bottomPathString += bottomPath[i].join(' ');
         }
+
         this.lineTop.setAttribute("d", topPathString);
         this.lineBottomOver.setAttribute("d", bottomPathString);
         this.lineBottomUnder.setAttribute("d", bottomPathString);
+        
+        this.lineTop.style.strokeWidth = String(this.backBoneWidth);
+        this.lineBottomOver.style.strokeWidth = String(this.backBoneWidth);
+        this.lineBottomUnder.style.strokeWidth = String(this.backBoneWidth);
 
         let lineSize = this.lineBottomOver.getTotalLength()
         let curveSize = (lineSize - (lineSize * this.freq)) / 1.5;
         this.lineBottomOver.style.strokeDasharray = `${curveSize} ${curveSize}`;
         this.lineBottomOver.style.strokeDashoffset = `${(curveSize / 2) + this.rarity * this.phase}`;
-        
     }
 
     tick()
@@ -168,9 +209,6 @@ export class App extends Component
 
     onResize()
 	{
-        
-        
-
         if(this._container)
         {
             this._width = this._container.offsetWidth;
@@ -180,9 +218,11 @@ export class App extends Component
             this.svg.setAttribute('height', String(this._height));
 
             
-            this.points = Math.round(this.width / this.curveResolution)
+            this.points = this.width / this.curveResolution;
             this.amplitude = (this.height - (this.padding * 2)) / 2;
             this.rarity = this.width / this.points;
+
+            if(this.amplitude > this.maxAmplitude) this.amplitude = this.maxAmplitude;
             if(this.rarity < this.minBaseGap) this.rarity = this.minBaseGap;
         }
     }
