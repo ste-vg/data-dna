@@ -1,5 +1,4 @@
 import './app.scss';
-import Image_Me from './me.png';
 import HTML from './app.html';
 import { Component } from '../common/component';
 
