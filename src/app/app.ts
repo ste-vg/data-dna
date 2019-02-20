@@ -1,11 +1,12 @@
 import './app.scss';
 import HTML from './app.html';
 import { Component } from '../common/component';
-import { TweenMax, Power4 } from "gsap";
+import { TweenMax, Power4, Power1 } from "gsap";
 
 export interface Data
 {
     id: string;
+    label?: string;
 }
 
 export class App extends Component
@@ -13,6 +14,7 @@ export class App extends Component
     private _container:HTMLElement | null = null;
     private svg:SVGElement;
     private baseGroup:SVGElement;
+    private labelGroup:SVGElement;
     private _width:number = 0;
     private _height:number = 0;
     private lineTop:SVGPathElement;
@@ -26,40 +28,46 @@ export class App extends Component
     private phase = 0; 
     private minBaseGap = 0;
     private padding = 10;
-    private rotationSpeed = 0.075;
+    private rotationSpeed = 0;
+    private targetRotationSpeed = 0.075;
     private curveResolution = 10;
     private points = 0;
     private maxAmplitude = 40;
     private targetMinY = 10;
     private minY = 10;
+    private labelRadius = 0;
+    private targetLabelRadius = 8;
+    private labelStroke = 0;
+    private targetLabelStroke = 4;
 
     private backBoneWidth = 0;
     private targetBackBoneWidth = 8;
 
-    private showDetails:boolean = false;
+    private showDetails:boolean = true;
     private addBlanks:boolean = true;
 
     private data: (Data|null)[] = [
         { id: 'basePair'},
         { id: 'basePair'},
         { id: 'basePair'},
+        { id: 'basePair', label: 'Top Movie Watchers'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair', label: 'Top Personas'},
+        { id: 'basePair'},
+        { id: 'basePair', label: 'Top Music Listeners'},
         { id: 'basePair'},
         { id: 'basePair'},
         { id: 'basePair'},
         { id: 'basePair'},
         { id: 'basePair'},
         { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair'},
+        { id: 'basePair', label: 'Longest Flight'},
         { id: 'basePair'}
     ]
 
     private bases:SVGLineElement[] = [];
+    private circles:({element: SVGCircleElement, top:boolean} | null)[] = [];
 
     constructor(container:Element)
     {
@@ -86,9 +94,13 @@ export class App extends Component
         this.svg.appendChild(this.lineTop);
 
         this.lineBottomOver = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-        this.lineBottomOver.setAttribute("class", "line bottom");
-        
+        this.lineBottomOver.setAttribute("class", "line bottom dashed");
         this.svg.appendChild(this.lineBottomOver);        
+
+        //
+
+        this.labelGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        this.svg.appendChild(this.labelGroup);
     }
 
     private onInit()
@@ -106,6 +118,7 @@ export class App extends Component
             
             window.addEventListener('resize', () => this.onResize())
             this.onResize();
+            let top = true;
 
             for (let i = 0; i < this.data.length; i++) 
             {
@@ -114,28 +127,48 @@ export class App extends Component
                 base.setAttribute('class', `base ${classString}`);
                 this.baseGroup.appendChild(base);
                 this.bases.push(base);
+
+                let circle = (this.data[i] && this.data[i].label) ? document.createElementNS("http://www.w3.org/2000/svg", 'circle') : null;
+                this.circles.push(circle ? {element: circle, top: top} : null);
+                if(circle)
+                {
+                    this.labelGroup.appendChild(circle);
+                    circle.setAttribute('class', `circle ${classString} ${top ? 'top' : 'bottom'}`);
+                    circle.setAttribute('r', String(this.labelRadius));
+                    top = !top;
+
+                }
             }  
             
             this._container.addEventListener('click', () => this.toggleState())
 
-            this.onStateChange();
+            this.setDetailsState(this.showDetails);
             requestAnimationFrame(() => this.tick());
         }
     }
 
+    private setDetailsState(state:boolean)
+    {
+        this.showDetails = state;
+        this.onStateChange();
+    }
+
     private toggleState()
     {
-        this.showDetails = !this.showDetails;
-        this.onStateChange();
+        this.setDetailsState(!this.showDetails)
     }
 
     private onStateChange()
     {
-        TweenMax.to(this, 3, {
+        TweenMax.to(this, this.showDetails ? 3 : 2, {
             backBoneWidth: this.showDetails ? this.targetBackBoneWidth : 0,
             freq: this.showDetails ? this.targetFreq : 0, 
+            rotationSpeed: this.showDetails ? this.targetRotationSpeed : 0, 
             minY: this.showDetails ? 0 : this.targetMinY, 
-            ease: Power4.easeInOut,
+            phase: this.showDetails ? 0 : `+=${(Math.PI * 4) / this.freq}`, 
+            labelRadius: this.showDetails ? this.targetLabelRadius : 0, 
+            labelStroke: this.showDetails ? this.targetLabelStroke : 0, 
+            ease: this.showDetails ? Power4.easeInOut : Power1.easeInOut,
             onComplete: () => {if(!this.showDetails) this.phase = 0;}
         })
     }
@@ -176,6 +209,16 @@ export class App extends Component
             base.setAttribute('x2', x);
             base.setAttribute('y1', y1);
             base.setAttribute('y2', y2);
+
+            if(this.circles[i])
+            {
+                let circle = this.circles[i].element;
+                let top = this.circles[i].top;
+                circle.setAttribute('cx', x);
+                circle.setAttribute('cy', top ? y1 : y2);
+                circle.setAttribute('r', String(this.labelRadius));
+                circle.style.strokeWidth = String(this.labelStroke);
+            }
         }
 
         let topPathString = '';
@@ -199,7 +242,7 @@ export class App extends Component
         this.lineBottomUnder.style.strokeWidth = String(this.backBoneWidth);
 
         let lineSize = this.lineBottomOver.getTotalLength()
-        let curveSize = (lineSize - (lineSize * this.freq)) / 1.5;
+        let curveSize = (lineSize - (lineSize * this.freq)) / Math.PI;
         this.lineBottomOver.style.strokeDasharray = `${curveSize} ${curveSize}`;
         this.lineBottomOver.style.strokeDashoffset = `${(curveSize / 2) + this.rarity * this.phase}`;
     }
@@ -207,7 +250,7 @@ export class App extends Component
     tick()
     {
         this.phase += this.rotationSpeed;
-        if(this.phase > (Math.PI * 2) / this.freq) this.phase = 0
+        if(this.phase > (Math.PI * 4) / this.freq) this.phase = 0
 
         this.draw();
         requestAnimationFrame(() => this.tick());

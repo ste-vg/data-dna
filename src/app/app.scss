@@ -1,12 +1,17 @@
 app
 {
+    --color-background: #273237;
+    --color-top: steelblue;
+    --color-bottom: lightblue;
+    --color-base: white;
+
     width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: #273237;
+    background-color: var(--color-background);
     color: white;
 
     .container
@@ -18,6 +23,8 @@ app
 
     #root
     {
+        
+
         width: 100%;
         height: 100%;
         -webkit-backface-visibility:hidden;
@@ -35,11 +42,34 @@ app
         fill: none;
         stroke-width: 0px;
         stroke-linecap: round;
-        stroke: lightblue;
+        stroke: var(--color-bottom);
 
         &.top
         {
-            stroke: steelblue;
+            stroke: var(--color-top);
+        }
+
+        &.dashed
+        {
+            //stroke: red;
+        }
+    }
+
+    .circle
+    {
+        stroke: var(--color-base);
+        stroke-width: 4;
+        fill: var(--color-background);
+
+        &.top
+        {
+            stroke: var(--color-top);
+            
+        }
+       
+        &.bottom
+        {
+            stroke: var(--color-bottom)
         }
     }
 
