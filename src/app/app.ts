@@ -3,13 +3,9 @@ import HTML from './app.html';
 import { Component } from '../common/component';
 import { TweenMax, Power4 } from "gsap";
 
-export interface FlightSummary
+export interface Data
 {
     id: string;
-    code: string;
-    airline: string;
-    route: string;
-    stats: any;
 }
 
 export class App extends Component
@@ -43,24 +39,24 @@ export class App extends Component
     private showDetails:boolean = false;
     private addBlanks:boolean = true;
 
-    private data: (FlightSummary|null)[] = [
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps002', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
-        { id: 'panasky', code: 'ps002', airline: 'panasky', route: 'lax-lhr', stats: null}
+    private data: (Data|null)[] = [
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'},
+        { id: 'basePair'}
     ]
 
     private bases:SVGLineElement[] = [];
@@ -114,7 +110,7 @@ export class App extends Component
             for (let i = 0; i < this.data.length; i++) 
             {
                 let base = document.createElementNS("http://www.w3.org/2000/svg", 'line');
-                let classString:string = (this.data[i] !== null) ?  this.data[i].code : 'blank';
+                let classString:string = (this.data[i] !== null) ?  this.data[i].id : 'blank';
                 base.setAttribute('class', `base ${classString}`);
                 this.baseGroup.appendChild(base);
                 this.bases.push(base);
