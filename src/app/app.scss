@@ -35,12 +35,18 @@ app
         fill: none;
         stroke-width: 0px;
         stroke-linecap: round;
+        stroke: lightblue;
+
+        &.top
+        {
+            stroke: steelblue;
+        }
     }
 
     .base
     {
         fill: none;
-        stroke-width: 6px;
+        stroke-width: 7px;
         stroke-linecap: round;
         stroke: white;
 

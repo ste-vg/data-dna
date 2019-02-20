@@ -3,6 +3,15 @@ import HTML from './app.html';
 import { Component } from '../common/component';
 import { TweenMax, Power4 } from "gsap";
 
+export interface FlightSummary
+{
+    id: string;
+    code: string;
+    airline: string;
+    route: string;
+    stats: any;
+}
+
 export class App extends Component
 {
     private _container:HTMLElement | null = null;
@@ -31,27 +40,27 @@ export class App extends Component
     private backBoneWidth = 0;
     private targetBackBoneWidth = 8;
 
-    private showDetails:boolean = true;
+    private showDetails:boolean = false;
     private addBlanks:boolean = true;
 
-    private data = [
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky',
-        'panasky'
+    private data: (FlightSummary|null)[] = [
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps002', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps001', airline: 'panasky', route: 'lax-lhr', stats: null},
+        { id: 'panasky', code: 'ps002', airline: 'panasky', route: 'lax-lhr', stats: null}
     ]
 
     private bases:SVGLineElement[] = [];
@@ -73,18 +82,15 @@ export class App extends Component
         // 
         
         this.lineBottomUnder = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-        this.lineBottomUnder.setAttribute("class", "line");
-        this.lineBottomUnder.style.stroke = 'steelblue';
+        this.lineBottomUnder.setAttribute("class", "line bottom");
         this.svg.appendChild(this.lineBottomUnder);
 
         this.lineTop = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-        this.lineTop.setAttribute("class", "line");
-        this.lineTop.style.stroke = 'red';
+        this.lineTop.setAttribute("class", "line top");
         this.svg.appendChild(this.lineTop);
 
         this.lineBottomOver = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-        this.lineBottomOver.setAttribute("class", "line");
-        this.lineBottomOver.style.stroke = 'steelblue';
+        this.lineBottomOver.setAttribute("class", "line bottom");
         
         this.svg.appendChild(this.lineBottomOver);        
     }
@@ -95,8 +101,8 @@ export class App extends Component
 
         if(this.addBlanks)
         {
-            this.data.push('blank');
-            this.data.unshift('blank');
+            this.data.push(null);
+            this.data.unshift(null);
         }
         if(this._container)
         {
@@ -108,7 +114,8 @@ export class App extends Component
             for (let i = 0; i < this.data.length; i++) 
             {
                 let base = document.createElementNS("http://www.w3.org/2000/svg", 'line');
-                base.setAttribute('class', `base ${this.data[i]}`);
+                let classString:string = (this.data[i] !== null) ?  this.data[i].code : 'blank';
+                base.setAttribute('class', `base ${classString}`);
                 this.baseGroup.appendChild(base);
                 this.bases.push(base);
             }  
@@ -203,6 +210,8 @@ export class App extends Component
     tick()
     {
         this.phase += this.rotationSpeed;
+        if(this.phase > (Math.PI * 2) / this.freq) this.phase = 0
+
         this.draw();
         requestAnimationFrame(() => this.tick());
     }
