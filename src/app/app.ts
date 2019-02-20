@@ -135,7 +135,8 @@ export class App extends Component
             backBoneWidth: this.showDetails ? this.targetBackBoneWidth : 0,
             freq: this.showDetails ? this.targetFreq : 0, 
             minY: this.showDetails ? 0 : this.targetMinY, 
-            ease: Power4.easeInOut
+            ease: Power4.easeInOut,
+            onComplete: () => {if(!this.showDetails) this.phase = 0;}
         })
     }
 
