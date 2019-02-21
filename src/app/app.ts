@@ -1,7 +1,7 @@
 import './app.scss';
 import HTML from './app.html';
 import { Component } from '../common/component';
-import { TweenMax, Power4, Power1 } from "gsap";
+import { TweenMax, Power4, Power1, Bounce, Elastic, Power2 } from "gsap";
 
 export interface Data
 {
@@ -35,39 +35,42 @@ export class App extends Component
     private maxAmplitude = 40;
     private targetMinY = 10;
     private minY = 10;
+    
     private labelRadius = 0;
     private targetLabelRadius = 8;
     private labelStroke = 0;
     private targetLabelStroke = 4;
+    private labelSpace = 20;
 
     private backBoneWidth = 0;
     private targetBackBoneWidth = 8;
 
+    private positions = {
+        strand: 0.33,
+        labels: 0.66
+    }
+
+    Percent = [50, ]
+
     private showDetails:boolean = true;
     private addBlanks:boolean = true;
+    private portrait:boolean = false;
 
     private data: (Data|null)[] = [
-        { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair', label: 'Top Movie Watchers'},
-        { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair', label: 'Top Personas'},
-        { id: 'basePair'},
-        { id: 'basePair', label: 'Top Music Listeners'},
-        { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair'},
-        { id: 'basePair', label: 'Longest Flight'},
-        { id: 'basePair'}
+        { id: 'basePair', label: 'P_QWE'},
+        { id: 'basePair', label: 'P_XYZ'},
+        { id: 'basePair', label: 'P_BB8'},
+        { id: 'basePair', label: 'P_ABC'},
+        { id: 'basePair', label: 'P_QE2'},
+        { id: 'basePair', label: 'P_MIA'},
+        { id: 'basePair', label: 'P_QWE'},
+        { id: 'basePair', label: 'P_123'},
+        { id: 'basePair', label: 'P_987'},
+        { id: 'basePair', label: 'P_5M5'}
     ]
 
     private bases:SVGLineElement[] = [];
-    private circles:({element: SVGCircleElement, top:boolean} | null)[] = [];
+    private circles:({element: SVGCircleElement, label:SVGTextElement, line:SVGPathElement, top:boolean} | null)[] = [];
 
     constructor(container:Element)
     {
@@ -119,6 +122,7 @@ export class App extends Component
             window.addEventListener('resize', () => this.onResize())
             this.onResize();
             let top = true;
+            let labelCount = 0;
 
             for (let i = 0; i < this.data.length; i++) 
             {
@@ -129,12 +133,30 @@ export class App extends Component
                 this.bases.push(base);
 
                 let circle = (this.data[i] && this.data[i].label) ? document.createElementNS("http://www.w3.org/2000/svg", 'circle') : null;
-                this.circles.push(circle ? {element: circle, top: top} : null);
+                let text = circle ? document.createElementNS("http://www.w3.org/2000/svg", 'text') : null;
+                let line = circle ? document.createElementNS("http://www.w3.org/2000/svg", 'path') : null;
+                this.circles.push(circle ? {element: circle, label: text, line: line, top: top} : null);
+                
+                
                 if(circle)
                 {
-                    this.labelGroup.appendChild(circle);
+                    labelCount++;
+
+                    
                     circle.setAttribute('class', `circle ${classString} ${top ? 'top' : 'bottom'}`);
                     circle.setAttribute('r', String(this.labelRadius));
+                    
+                    text.setAttribute('alignment-baseline', 'middle');
+                    text.setAttribute('class', `label ${classString} ${top ? 'top' : 'bottom'}`);
+                    text.style.transitionDelay = 1.4 + (0.05 * labelCount) + 's';
+                    text.innerHTML = this.data[i].label;
+                    
+                    line.setAttribute('class', `label-line ${classString} ${top ? 'top' : 'bottom'}`);
+
+                    this.labelGroup.appendChild(line);
+                    this.labelGroup.appendChild(circle);
+                    this.labelGroup.appendChild(text);
+                    
                     top = !top;
 
                 }
@@ -142,14 +164,23 @@ export class App extends Component
             
             this._container.addEventListener('click', () => this.toggleState())
 
-            this.setDetailsState(this.showDetails);
-            requestAnimationFrame(() => this.tick());
+            setTimeout(() => {
+                this.setDetailsState(this.showDetails);
+                requestAnimationFrame(() => this.tick());
+            }, 0);
+            
         }
     }
 
     private setDetailsState(state:boolean)
     {
         this.showDetails = state;
+        if(this._container)
+        {
+            if(this.showDetails) this._container.classList.add('details');
+            else this._container.classList.remove('details');
+        }
+        
         this.onStateChange();
     }
 
@@ -160,7 +191,7 @@ export class App extends Component
 
     private onStateChange()
     {
-        TweenMax.to(this, this.showDetails ? 3 : 2, {
+        TweenMax.to(this, this.showDetails ? 2.5 : 2, {
             backBoneWidth: this.showDetails ? this.targetBackBoneWidth : 0,
             freq: this.showDetails ? this.targetFreq : 0, 
             rotationSpeed: this.showDetails ? this.targetRotationSpeed : 0, 
@@ -168,16 +199,22 @@ export class App extends Component
             phase: this.showDetails ? 0 : `+=${(Math.PI * 4) / this.freq}`, 
             labelRadius: this.showDetails ? this.targetLabelRadius : 0, 
             labelStroke: this.showDetails ? this.targetLabelStroke : 0, 
-            ease: this.showDetails ? Power4.easeInOut : Power1.easeInOut,
+            ease: this.showDetails ? Power4.easeInOut : Power2.easeOut,
             onComplete: () => {if(!this.showDetails) this.phase = 0;}
         })
     }
 
-    private getY(i:number, direction:number)
+    private getPositionPoint(i:number) 
+    {
+        return (i + 1) * this.rarity;
+    }
+
+    private getCurvePoint(i:number, direction:number)
     {
         let amp = direction * this.amplitude;
         let minY = direction * this.minY;
-        return minY + (Math.sin(this.freq * (i + this.phase)) * amp + (this._height/2));
+        let center = this.positions.strand * (this.portrait ? this._width : this._height);
+        return minY + (Math.sin(this.freq * (i + this.phase)) * amp + center);
     }
 
     private draw()
@@ -187,36 +224,79 @@ export class App extends Component
 
         for (let i = 0; i < this.points; i++) 
         {
-            let x = String((i + 1) * this.rarity);
-            let y1 = String(this.getY(i, 1));
-            let y2 = String(this.getY(i, -1));
+            let point = this.getPositionPoint(i);
+            let curve1 = this.getCurvePoint(i, 1);
+            let curve2 = this.getCurvePoint(i, -1);
 
-            topPath.push([x, y1]);
-            bottomPath.push([x, y2]);
+            let x1 = this.portrait ? curve1 : point;
+            let x2 = this.portrait ? curve2 : point;
+            let y1 = this.portrait ? point : curve1;
+            let y2 = this.portrait ? point : curve2;
+
+            topPath.push([x1, y1]);
+            bottomPath.push([x2, y2]);
         }   
 
         let gaps = this.points / (this.data.length - 1); 
+        let labelCount = 0;
 
         for (let i = 0; i < this.data.length; i++) 
         {
             let j = i * gaps;
-            let x = String((j + 1) * this.rarity);
-            let y1 = String(this.getY(j, 1));
-            let y2 = String(this.getY(j, -1));
+            let point = this.getPositionPoint(j);
+            let curve1 = this.getCurvePoint(j, 1);
+            let curve2 = this.getCurvePoint(j, -1);
+
+            let x1 = this.portrait ? curve1 : point;
+            let x2 = this.portrait ? curve2 : point;
+            let y1 = this.portrait ? point : curve1;
+            let y2 = this.portrait ? point : curve2;
 
             let base = this.bases[i];
-            base.setAttribute('x1', x);
-            base.setAttribute('x2', x);
-            base.setAttribute('y1', y1);
-            base.setAttribute('y2', y2);
+            base.setAttribute('x1', String(x1));
+            base.setAttribute('x2', String(x2));
+            base.setAttribute('y1', String(y1));
+            base.setAttribute('y2', String(y2));
 
             if(this.circles[i])
             {
+                labelCount++;
+
                 let circle = this.circles[i].element;
                 let top = this.circles[i].top;
-                circle.setAttribute('cx', x);
-                circle.setAttribute('cy', top ? y1 : y2);
+                let label = this.circles[i].label;
+                let line = this.circles[i].line;
+
+                circle.setAttribute('cx', String(top ? x1 : x2));
+                circle.setAttribute('cy', String(top ? y1 : y2));
                 circle.setAttribute('r', String(this.labelRadius));
+
+                
+
+                label.style.transitionDelay = (this.showDetails ? 0 : 1.4) + (0.05 * labelCount) + 's';
+                label.setAttribute('text-anchor', 'middle');
+                
+                let staticPos = this.portrait ? this._width * this.positions.labels : this._height * this.positions.labels;
+                let x = this.portrait ? staticPos : top ? x1 + this.labelSpace : x2 + this.labelSpace
+                let y = !this.portrait ? staticPos : top ? y1 - this.labelSpace : y2 - this.labelSpace
+
+                label.setAttribute('x', String(x));
+                label.setAttribute('y', String(y));
+
+                let startX = Number(top ? x1 : x2);
+                let startY = Number(top ? y1 : y2);
+                let linePositions = [
+                    'M',
+                    startX,
+                    startY,
+                    'L',
+                    startX + this.labelSpace,
+                    this.portrait ? (startY - this.labelSpace) : (startY + this.labelSpace),
+                    x - (this.portrait ? this.labelSpace : 0),
+                    y - (!this.portrait ? this.labelSpace : 0)
+                ]
+                line.setAttribute('d', linePositions.join(' '))
+
                 circle.style.strokeWidth = String(this.labelStroke);
             }
         }
@@ -263,13 +343,16 @@ export class App extends Component
             this._width = this._container.offsetWidth;
             this._height = this._container.offsetHeight;
 
+            if(this._height >= this.width) this.portrait = true;
+            else this.portrait = false;
+
             this.svg.setAttribute('width', String(this._width));
             this.svg.setAttribute('height', String(this._height));
 
             
-            this.points = this.width / this.curveResolution;
-            this.amplitude = (this.height - (this.padding * 2)) / 2;
-            this.rarity = this.width / this.points;
+            this.points = (this.portrait ? this.height : this.width) / this.curveResolution;
+            this.amplitude = ((this.portrait ? this.width : this.height) - (this.padding * 2)) / 2;
+            this.rarity = (this.portrait ? this.height : this.width) / this.points;
 
             if(this.amplitude > this.maxAmplitude) this.amplitude = this.maxAmplitude;
             if(this.rarity < this.minBaseGap) this.rarity = this.minBaseGap;

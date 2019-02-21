@@ -85,4 +85,68 @@ app
             stroke: transparent;
         }
     }
+
+    .label
+    {
+        font-family: sans-serif;
+        font-weight: 100;
+        font-size: 0.9rem;
+        fill: var(--color-base);
+        text-anchor: start;
+        
+        opacity: 0;
+        transition-property: opacity, transform;
+        transition-duration: 0.5s;
+        transition-timing-function: ease-in;
+        transition-delay: 1s;
+
+        &.top
+        {
+            transform: translateX(1%) translateY(-1%);
+        }
+
+        &.bottom
+        {
+            transform: translateX(1%) translateY(1%); 
+        }
+    }
+
+    .label-line
+    {
+        fill: none;
+        stroke: var(--color-base);
+        stroke-width: 2;
+        stroke-dasharray: 8 6 4 6 8 4;
+        opacity: 0;
+        stroke-dasharray: 2 6;
+        transition: opacity 1s ease-in-out;
+        
+
+        &.top
+        {
+            stroke: var(--color-top);
+            
+        }
+       
+        &.bottom
+        {
+            stroke: var(--color-bottom)
+        }
+    }
+
+    .details
+    {
+        .label
+        {
+            transition-timing-function: ease-out;
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .label-line
+        {
+            transition-delay: 1s;
+            opacity: 0.75;
+        }
+    }
 }
